@@ -1,15 +1,20 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
+from os import getenv
+from os import environ
 from telegraph import upload_file
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 Bot = Client(
     "Telegraph Uploader Bot",
-    bot_token=os.environ.get("BOT_TOKEN"),
-    api_id=int(os.environ.get("API_ID")),
-    api_hash=os.environ.get("API_HASH")
+    bot_token=os.environ.get("BOT_TOKEN", "6320796768:AAGu6C6R991duq6K1LGBiD3Sn1WHPaK_oUU"),
+    api_id=int(os.environ.get("API_ID", "11973721")),
+    api_hash=os.environ.get("API_HASH", "5264bf4663e9159565603522f58d3c18")
 )
-
+BANNED_CHANNELS = list(set(int(x) for x in str(getenv("BANNED_CHANNELS", "-1001296894100")).split()))
 DOWNLOAD_LOCATION = os.environ.get("DOWNLOAD_LOCATION", "./DOWNLOADS/")
 
 START_CAPTION = """ʜᴇʏ {}, 🥀
@@ -95,5 +100,24 @@ async def getmedia(bot, update):
         disable_web_page_preview=True,
         reply_markup=reply_markup
     )
+
+@Bot.on_message(
+    filters.channel
+    & (
+        filters.document
+        | filters.video
+    ),
+    group=4,
+)
+async def channel_receive_handler(bot, broadcast):
+    if int(broadcast.chat.id) in Config.BANNED_CHANNELS:
+        await bot.leave_chat(broadcast.chat.id)
+        return
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔥 Uploaded By", url=f'https://telegram.me/Star_Moviess_Tamil')]])
+    try:
+        await bot.edit_message_reply_markup(reply_markup)
+    except Exception as e:
+        print(e)
+        pass
 
 Bot.run()
